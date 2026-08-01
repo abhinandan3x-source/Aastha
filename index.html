@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Aastha — Girlfriend Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,ital@9..144,300..600,0..1&family=Lora:ital,wght@0,400..500;1,400..500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBE1E9;
+    --paper-2:#F6CBD9;
+    --card:#FFF3F7;
+    --ink:#3A1B27;
+    --ink-soft:#7C4B5A;
+    --trail:#C97F91;
+    --rust:#D65C82;
+    --forest:#7A3A50;
+    --forest-deep:#3A1424;
+    --gold:#C98A5C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--forest-deep);
+    color:var(--ink);
+    font-family:'Lora', serif;
+    overflow:hidden;
+    height:100svh;
+    width:100vw;
+    position:fixed;
+    inset:0;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; letter-spacing:0.06em; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+
+  /* ---------------- app shell ---------------- */
+  #app{ position:relative; width:100%; height:100%; }
+  .stage{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:32px 24px;
+    text-align:center;
+    opacity:0; visibility:hidden;
+    transform:translateY(14px);
+    transition:opacity 0.6s ease, transform 0.6s ease, visibility 0.6s;
+    overflow-y:auto;
+  }
+  .stage.active{ opacity:1; visibility:visible; transform:translateY(0); }
+
+  /* washi tag used on several stages */
+  .tag{
+    position:relative;
+    background:var(--card);
+    padding:10px 22px 12px;
+    box-shadow:0 10px 24px -14px rgba(30,40,24,0.35);
+    font-size:0.95rem;
+    color:var(--ink-soft);
+    margin-bottom:38px;
+  }
+  .tag::before{
+    content:"";
+    position:absolute; top:-10px; left:50%;
+    width:46px; height:16px;
+    transform:translateX(-50%) rotate(-3deg);
+    background:rgba(180,135,46,0.28);
+  }
+  .tag b{
+    display:block;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:1.15rem;
+    color:var(--ink);
+    margin-bottom:2px;
+  }
+
+  /* ---------------- floating hearts (ambient, global) ---------------- */
+  #hearts{ position:fixed; inset:0; pointer-events:none; z-index:40; overflow:hidden; }
+  .heart-particle{
+    position:absolute;
+    bottom:-6%;
+    font-size:14px;
+    color:var(--rust);
+    opacity:0;
+    animation-name:heart-rise;
+    animation-timing-function:linear;
+    animation-iteration-count:infinite;
+  }
+  @keyframes heart-rise{
+    0%{ opacity:0; transform:translateY(0) translateX(0) scale(0.8); }
+    10%{ opacity:0.55; }
+    90%{ opacity:0.4; }
+    100%{ opacity:0; transform:translateY(-108vh) translateX(24px) scale(1.1); }
+  }
+
+  /* ---------------- top controls ---------------- */
+  #topbar{
+    position:fixed; top:16px; right:16px; z-index:50;
+    display:flex; gap:10px;
+  }
+  #musicToggle{
+    width:44px; height:44px;
+    border-radius:50%;
+    background:rgba(251,245,233,0.9);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem;
+    box-shadow:0 8px 18px -10px rgba(30,40,24,0.4);
+    color:var(--rust);
+    transition:transform 0.3s ease;
+  }
+  #musicToggle.playing{ animation:sway 1.8s ease-in-out infinite; }
+  @keyframes sway{
+    0%,100%{ transform:rotate(-6deg); }
+    50%{ transform:rotate(6deg); }
+  }
+
+  /* ---------------- progress dots ---------------- */
+  #dots{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+    z-index:50;
+    display:flex; gap:8px;
+  }
+  #dots .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:rgba(180,135,46,0.35);
+    transition:background 0.3s ease, transform 0.3s ease;
+  }
+  #dots .dot.on{ background:var(--rust); transform:scale(1.3); }
+  .stage-dark ~ #dots .dot{ background:rgba(228,216,192,0.3); }
+
+  /* ================= STAGE 1 — intro ================= */
+  .stage-intro{ background:var(--forest-deep); color:var(--paper); cursor:pointer; }
+  .intro-lines{ min-height:120px; display:flex; flex-direction:column; gap:10px; justify-content:center; }
+  .intro-line{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:340;
+    font-size:clamp(1.3rem, 5vw, 1.9rem);
+    opacity:0;
+  }
+  .intro-line.shown{ opacity:1; transition:opacity 0.7s ease; }
+  .intro-prompt{
+    margin-top:46px;
+    font-size:0.7rem; text-transform:uppercase; color:var(--gold);
+    opacity:0; transition:opacity 0.8s ease;
+  }
+  .intro-prompt.shown{ opacity:0.9; animation:blink-soft 2s ease-in-out infinite; }
+  @keyframes blink-soft{ 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+
+  /* ================= STAGE 2 — envelope ================= */
+  .env-wrap{ perspective:1200px; margin-bottom:14px; }
+  .envelope{
+    position:relative;
+    width:220px; height:150px;
+    cursor:pointer;
+  }
+  .env-back{
+    position:absolute; inset:0;
+    background:var(--rust);
+    opacity:0.9;
+  }
+  .env-letter{
+    position:absolute;
+    left:10px; right:10px; top:-96px;
+    height:170px;
+    background:var(--card);
+    box-shadow:0 14px 30px -18px rgba(30,40,24,0.4);
+    padding:20px 16px;
+    font-family:'Fraunces', serif; font-style:italic; color:var(--ink);
+    font-size:0.92rem; line-height:1.55;
+    transform:translateY(96px);
+    transition:transform 0.9s cubic-bezier(.2,.8,.25,1);
+    transition-delay:0s;
+    z-index:5;
+  }
+  .envelope.open .env-letter{ transform:translateY(-56px); transition-delay:0.35s; }
+  .env-flap{
+    position:absolute; top:0; left:0; width:100%; height:76px;
+    background:var(--trail);
+    clip-path:polygon(0 0, 100% 0, 50% 100%);
+    transform-origin:top;
+    transition:transform 0.6s ease;
+    z-index:2;
+  }
+  .envelope.open .env-flap{ transform:rotateX(180deg); }
+  .env-front{
+    position:absolute; inset:0;
+    background:var(--rust);
+    clip-path:polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%);
+    z-index:1;
+  }
+  .env-seal{
+    position:absolute; left:50%; top:66px; transform:translate(-50%,-50%);
+    width:34px; height:34px; border-radius:50%;
+    background:var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--card); font-size:0.85rem;
+    z-index:3;
+    box-shadow:0 4px 10px -4px rgba(30,40,24,0.5);
+    transition:opacity 0.4s ease, transform 0.4s ease;
+  }
+  .envelope.open .env-seal{ opacity:0; transform:translate(-50%,-50%) scale(0.4); }
+  .env-hint{ margin-top:20px; font-size:0.68rem; text-transform:uppercase; color:var(--trail); }
+  .env-continue{
+    margin-top:30px;
+    font-size:0.72rem; text-transform:uppercase; color:var(--rust);
+    border-bottom:1px solid var(--rust); padding-bottom:2px;
+    opacity:0; pointer-events:none; transition:opacity 0.5s ease;
+  }
+  .env-continue.shown{ opacity:1; pointer-events:auto; }
+
+  /* ================= STAGE 3 — counter ================= */
+  .counter-grid{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+  .counter-unit{
+    background:var(--card);
+    padding:16px 14px;
+    min-width:76px;
+    box-shadow:0 10px 22px -14px rgba(30,40,24,0.35);
+  }
+  .counter-num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:1.9rem; font-weight:500; color:var(--rust);
+  }
+  .counter-label{ font-size:0.62rem; text-transform:uppercase; color:var(--ink-soft); margin-top:4px; }
+  .counter-sub{
+    margin-top:26px; font-family:'Fraunces', serif; font-style:italic; color:var(--ink-soft);
+    font-size:1.05rem;
+  }
+
+  /* ================= STAGE 4 — gallery ================= */
+  .gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+    max-width:420px;
+    margin-top:4px;
+  }
+  .polaroid{
+    background:var(--card);
+    padding:6px 6px 14px;
+    box-shadow:0 10px 20px -14px rgba(30,40,24,0.4);
+    cursor:pointer;
+    transition:transform 0.25s ease;
+  }
+  .polaroid:nth-child(odd){ transform:rotate(-2.5deg); }
+  .polaroid:nth-child(even){ transform:rotate(2deg); }
+  .polaroid:active{ transform:scale(0.96); }
+  .polaroid img{ width:100%; aspect-ratio:3/4; object-fit:cover; display:block; }
+
+  #lightbox{
+    position:fixed; inset:0; z-index:60;
+    background:rgba(20,16,10,0.86);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; visibility:hidden;
+    transition:opacity 0.3s ease, visibility 0.3s;
+  }
+  #lightbox.open{ opacity:1; visibility:visible; }
+  #lightbox img{
+    max-width:86vw; max-height:78vh;
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+
+  /* ================= STAGE 5 — postcard / video ================= */
+  .postcard{
+    position:relative;
+    max-width:280px;
+    background:var(--card);
+    padding:12px 12px 40px;
+    box-shadow:0 22px 46px -20px rgba(30,40,24,0.4);
+    transform:rotate(1.2deg);
+  }
+  .postcard video{ display:block; width:100%; aspect-ratio:9/16; object-fit:cover; background:var(--forest-deep); }
+  .postcard::after{
+    content:"wish you were here (you are)";
+    position:absolute; bottom:12px; left:12px; right:12px;
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--ink-soft); text-align:left;
+  }
+
+  /* ================= STAGE 6 — closing ================= */
+  .stage-closing{ background:var(--forest-deep); color:var(--paper); }
+  .pin{ width:12px; height:12px; border-radius:50%; background:var(--gold); margin:0 auto 18px; animation:pulse 2.2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{box-shadow:0 0 0 6px rgba(180,135,46,0.18);} 50%{box-shadow:0 0 0 12px rgba(180,135,46,0.06);} }
+  .closing-line{
+    font-family:'Fraunces', serif; font-weight:380; font-style:italic;
+    font-size:clamp(1.7rem, 6.4vw, 2.4rem); line-height:1.3;
+    max-width:16ch;
+  }
+  .closing-sub{ margin-top:20px; color:#EFC9D6; font-size:0.98rem; }
+  .replay{
+    margin-top:40px;
+    font-size:0.7rem; text-transform:uppercase; color:var(--gold);
+    border-bottom:1px solid var(--gold); padding-bottom:2px;
+  }
+
+  /* generic continue buttons */
+  .go-next{
+    margin-top:36px;
+    font-size:0.72rem; text-transform:uppercase; color:var(--rust);
+    border-bottom:1px solid var(--rust); padding-bottom:2px;
+  }
+</style>
+</head>
+<body>
+
+<div id="hearts"></div>
+
+<div id="topbar">
+  <button id="musicToggle" aria-label="Toggle music">♪</button>
+</div>
+
+<audio id="bgAudio" src="aastha-audio.mp3" loop preload="none"></audio>
+
+<div id="app">
+
+  <!-- STAGE 1: intro -->
+  <section class="stage stage-intro active" id="stage-1">
+    <div class="intro-lines" id="introLines">
+      <p class="intro-line">hey, aastha...</p>
+      <p class="intro-line">before you say anything —</p>
+      <p class="intro-line">i made you a little something.</p>
+    </div>
+    <p class="intro-prompt mono" id="introPrompt">tap anywhere to begin</p>
+  </section>
+
+  <!-- STAGE 2: envelope -->
+  <section class="stage" id="stage-2">
+    <div class="tag"><b>for my cutie :)</b>tap the envelope to open</div>
+    <div class="env-wrap">
+      <div class="envelope" id="envelope">
+        <div class="env-letter">
+          Hey Aastha,<br><br>
+          I made you a tiny corner of the internet — nothing fancy, just a few stops
+          from our story, because "very, very, very much" needed somewhere to live.
+          <br><br>Keep going, okay?
+        </div>
+        <div class="env-back"></div>
+        <div class="env-front"></div>
+        <div class="env-flap"></div>
+        <div class="env-seal">♥</div>
+      </div>
+    </div>
+    <button class="env-continue mono" id="envContinue">continue →</button>
+  </section>
+
+  <!-- STAGE 3: counter -->
+  <section class="stage" id="stage-3">
+    <div class="tag"><b>how far we've come</b>still counting, still not tired of you</div>
+    <div class="counter-grid">
+      <div class="counter-unit"><div class="counter-num" id="cDays">00</div><div class="counter-label mono">days</div></div>
+      <div class="counter-unit"><div class="counter-num" id="cHours">00</div><div class="counter-label mono">hrs</div></div>
+      <div class="counter-unit"><div class="counter-num" id="cMins">00</div><div class="counter-label mono">min</div></div>
+      <div class="counter-unit"><div class="counter-num" id="cSecs">00</div><div class="counter-label mono">sec</div></div>
+    </div>
+    <p class="counter-sub">and counting.</p>
+    <button class="go-next mono" data-next>continue →</button>
+  </section>
+
+  <!-- STAGE 4: gallery -->
+  <section class="stage" id="stage-4">
+    <div class="tag"><b>a few of my favorite stops</b>tap any photo to zoom in</div>
+    <div class="gallery-grid" id="galleryGrid">
+      <div class="polaroid"><img src="gallery/photo-1.jpg" alt="us"></div>
+      <div class="polaroid"><img src="gallery/photo-2.jpg" alt="us"></div>
+      <div class="polaroid"><img src="gallery/photo-3.jpg" alt="us"></div>
+      <div class="polaroid"><img src="gallery/photo-4.jpg" alt="us"></div>
+      <div class="polaroid"><img src="gallery/photo-5.jpg" alt="us"></div>
+      <div class="polaroid"><img src="gallery/photo-6.jpg" alt="us"></div>
+      <div class="polaroid"><img src="gallery/photo-7.jpg" alt="us"></div>
+    </div>
+    <button class="go-next mono" data-next>continue →</button>
+  </section>
+
+  <!-- STAGE 5: postcard / video -->
+  <section class="stage" id="stage-5">
+    <div class="tag"><b>and the whole trip, on replay</b>tap the postcard for sound</div>
+    <div class="postcard" id="postcard">
+      <video id="frameVideo" playsinline controls>
+        <source src="aastha-video.mp4" type="video/mp4">
+      </video>
+    </div>
+    <button class="go-next mono" data-next>continue →</button>
+  </section>
+
+  <!-- STAGE 6: closing -->
+  <section class="stage stage-closing" id="stage-6">
+    <div class="pin"></div>
+    <span class="mono" style="font-size:0.7rem; color:var(--gold); text-transform:uppercase;">happy girlfriend day</span>
+    <p class="closing-line" style="margin-top:16px;">I love you, Aastha —<br>very, very, very much.</p>
+    <p class="closing-sub">today, and every ordinary day after it.</p>
+    <button class="replay mono" id="replayBtn">replay ↺</button>
+  </section>
+
+</div>
+
+<div id="lightbox">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<div id="dots">
+  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+</div>
+
+<script>
+  /* ---------- EDIT THIS: set your actual anniversary / start date ---------- */
+  const ANNIVERSARY_DATE = new Date("2025-03-14T00:00:00");
+
+  /* ---------- stage navigation ---------- */
+  const stages = Array.from(document.querySelectorAll('.stage'));
+  const dots = Array.from(document.querySelectorAll('#dots .dot'));
+  let current = 0;
+
+  function goTo(index){
+    if(index < 0 || index >= stages.length) return;
+    stages[current].classList.remove('active');
+    current = index;
+    stages[current].classList.add('active');
+    dots.forEach((d,i)=> d.classList.toggle('on', i === current));
+  }
+  document.querySelectorAll('[data-next]').forEach(btn=>{
+    btn.addEventListener('click', ()=> goTo(current+1));
+  });
+  dots[0].classList.add('on');
+
+  /* ---------- stage 1: typewriter intro ---------- */
+  const introLines = document.querySelectorAll('.intro-line');
+  const introPrompt = document.getElementById('introPrompt');
+  introLines.forEach((line, i)=>{
+    setTimeout(()=> line.classList.add('shown'), 500 + i*1100);
+  });
+  setTimeout(()=> introPrompt.classList.add('shown'), 500 + introLines.length*1100 + 300);
+  document.getElementById('stage-1').addEventListener('click', ()=> goTo(1));
+
+  /* ---------- stage 2: envelope ---------- */
+  const envelope = document.getElementById('envelope');
+  const envContinue = document.getElementById('envContinue');
+  envelope.addEventListener('click', ()=>{
+    if(envelope.classList.contains('open')) return;
+    envelope.classList.add('open');
+    setTimeout(()=> envContinue.classList.add('shown'), 1400);
+  });
+  envContinue.addEventListener('click', ()=> goTo(2));
+
+  /* ---------- stage 3: live counter ---------- */
+  function updateCounter(){
+    const now = new Date();
+    let diff = Math.max(0, now - ANNIVERSARY_DATE);
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cDays').textContent = String(days).padStart(2,'0');
+    document.getElementById('cHours').textContent = String(hours).padStart(2,'0');
+    document.getElementById('cMins').textContent = String(mins).padStart(2,'0');
+    document.getElementById('cSecs').textContent = String(secs).padStart(2,'0');
+  }
+  updateCounter();
+  setInterval(updateCounter, 1000);
+
+  /* ---------- stage 4: lightbox ---------- */
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  document.querySelectorAll('.polaroid img').forEach(img=>{
+    img.addEventListener('click', ()=>{
+      lightboxImg.src = img.src;
+      lightbox.classList.add('open');
+    });
+  });
+  lightbox.addEventListener('click', ()=> lightbox.classList.remove('open'));
+
+  /* ---------- stage 5: tap postcard for sound ---------- */
+  const frameVideo = document.getElementById('frameVideo');
+  document.getElementById('postcard').addEventListener('click', (e)=>{
+    if(e.target.tagName.toLowerCase() !== 'video'){
+      frameVideo.muted = false;
+      frameVideo.play().catch(()=>{});
+    }
+  });
+
+  /* ---------- replay ---------- */
+  document.getElementById('replayBtn').addEventListener('click', ()=>{
+    envelope.classList.remove('open');
+    envContinue.classList.remove('shown');
+    goTo(0);
+  });
+
+  /* ---------- music toggle ---------- */
+  const bgAudio = document.getElementById('bgAudio');
+  const musicToggle = document.getElementById('musicToggle');
+  let playing = false;
+  musicToggle.addEventListener('click', ()=>{
+    if(!playing){
+      bgAudio.play().catch(()=>{});
+      musicToggle.classList.add('playing');
+      musicToggle.textContent = '♪';
+    } else {
+      bgAudio.pause();
+      musicToggle.classList.remove('playing');
+      musicToggle.textContent = '♪';
+    }
+    playing = !playing;
+  });
+
+  /* ---------- ambient floating hearts ---------- */
+  const heartsContainer = document.getElementById('hearts');
+  const glyphs = ['♥','♡'];
+  for(let i=0;i<14;i++){
+    const h = document.createElement('span');
+    h.className = 'heart-particle';
+    h.textContent = glyphs[Math.random() > 0.6 ? 1 : 0];
+    h.style.left = (Math.random()*100) + 'vw';
+    h.style.fontSize = (10 + Math.random()*12) + 'px';
+    const duration = 10 + Math.random()*10;
+    h.style.animationDuration = duration + 's';
+    h.style.animationDelay = '-' + (Math.random()*duration) + 's';
+    heartsContainer.appendChild(h);
+  }
+</script>
+
+</body>
+</html>
